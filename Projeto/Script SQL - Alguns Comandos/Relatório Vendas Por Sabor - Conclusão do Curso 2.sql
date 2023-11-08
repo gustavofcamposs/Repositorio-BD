@@ -1,0 +1,68 @@
+-- Relatório Vendas por Sabor
+-- A pedido do Comercial da empresa "Sucos de Frutas" eles querem fazer um acompanhamento
+-- sobre as vendas do ano de 2016 por sabores
+
+-- No Relatório eles querem um coluna com os Sabores do Suco
+-- O ano de 2016
+-- De forma ordenada do > p/ < a quantidade de PRODUTOS vendido por ano
+-- E no final a porcentagem disso sobre o total do volume de sucos vendidos em 2016
+
+SELECT * FROM tabela_de_produtos; -- SABOR
+SELECT * FROM NOTAS_FISCAIS; -- Ano
+SELECT * FROM ITENS_NOTAS_FISCAIS; -- Quantidade 
+
+-- Nesse Código mostra a Quantidade vendida por Sabor no ano de 2016
+SELECT SABOR, YEAR(NF.DATA_VENDA) AS DATA_VENDA, 
+SUM(INF.QUANTIDADE) AS QUANTIDADE
+ FROM TABELA_DE_PRODUTOS TP
+INNER JOIN itens_notas_fiscais INF
+ON INF.CODIGO_DO_PRODUTO = TP.CODIGO_DO_PRODUTO
+INNER JOIN notas_fiscais NF
+ON NF.NUMERO = INF.NUMERO 
+WHERE YEAR(NF.DATA_VENDA) = 2016 -- Devo colocar com o YEAR, pois eu retiro o ano e aí sim consigo colocar "=" ano, caso contrário era like e gambiarra
+GROUP BY SABOR, YEAR(NF.DATA_VENDA) -- DEVO COLOCAR NO GRUOUP BY todo indicador que não seja numérico, COLOQUEI A FUNÇÃO AO INVES DO ALIAS POR CAUSA DA FUNÇÃO
+ORDER BY SUM(INF.QUANTIDADE) DESC;
+
+
+-- Para fazer o Percentual o que eu Vendi por determinado Sabor divido pelo oq eu vendi por todo mundo
+-- para fazer isso basta tirar o Campo Sabor do SELECT e do Group By
+
+SELECT YEAR(NF.DATA_VENDA) AS DATA_VENDA, 
+SUM(INF.QUANTIDADE) AS QUANTIDADE
+ FROM TABELA_DE_PRODUTOS TP
+INNER JOIN itens_notas_fiscais INF
+ON INF.CODIGO_DO_PRODUTO = TP.CODIGO_DO_PRODUTO
+INNER JOIN notas_fiscais NF
+ON NF.NUMERO = INF.NUMERO 
+WHERE YEAR(NF.DATA_VENDA) = 2016 
+GROUP BY YEAR(NF.DATA_VENDA)
+ORDER BY SUM(INF.QUANTIDADE) DESC; -- Com esse Comando nós obtemos o Total
+
+
+
+
+
+
+-- AAA
+
+SELECT VENDA_SABOR.SABOR, VENDA_SABOR.ANO, VENDA_SABOR.QUANTIDADE, 
+CONCAT("% ",ROUND((VENDA_SABOR.QUANTIDADE/VENDA_TOTAL.QUANTIDADE) * 100, 2)) AS PARTICIPACAO -- CAMPOS PARA APERCER NO FINAL DAS CONTAS, COLOQUEI APENAS PARA OCULTAR O CAMPO ANO QUE SE REPETE
+FROM 
+(SELECT TP.SABOR, YEAR(NF.DATA_VENDA) AS ANO, SUM(INF.QUANTIDADE) AS QUANTIDADE FROM -- Quantidade vendida por Sabor no ano de 2016
+TABELA_DE_PRODUTOS TP 
+INNER JOIN ITENS_NOTAS_FISCAIS INF ON TP.CODIGO_DO_PRODUTO = INF.CODIGO_DO_PRODUTO
+INNER JOIN NOTAS_FISCAIS NF ON NF.NUMERO = INF.NUMERO
+WHERE YEAR(NF.DATA_VENDA) = 2016
+GROUP BY TP.SABOR, YEAR(NF.DATA_VENDA)) AS VENDA_SABOR
+
+INNER JOIN -- LIGAR AS CONSULTAR VENDA_SABOR COM VENDA_TOTAL
+
+(SELECT YEAR(NF.DATA_VENDA) AS ANO, SUM(INF.QUANTIDADE) AS QUANTIDADE FROM  -- Para tira o Percuntal, esse comando mostra o total
+TABELA_DE_PRODUTOS TP 
+INNER JOIN ITENS_NOTAS_FISCAIS INF ON TP.CODIGO_DO_PRODUTO = INF.CODIGO_DO_PRODUTO
+INNER JOIN NOTAS_FISCAIS NF ON NF.NUMERO = INF.NUMERO
+WHERE YEAR(NF.DATA_VENDA) = 2016
+GROUP BY YEAR(NF.DATA_VENDA)) AS VENDA_TOTAL
+
+ON VENDA_SABOR.ANO = VENDA_TOTAL.ANO
+ORDER BY VENDA_SABOR.QUANTIDADE DESC;
